@@ -56,7 +56,9 @@ public class DBUtil
         return conn;
     }
 
-
+    /**
+     * 释放资源
+     **/
     public boolean closeConn(Connection connection, Statement statement, ResultSet resultSet)
     {
         boolean resultsetClosed = false;
@@ -93,7 +95,9 @@ public class DBUtil
 
         return resultsetClosed && statementClosed && connectionClosed;
     }
-
+    /**
+     * 查询某表所有字段
+     **/
     public List<String> findAllColumns(String table, Connection conn)
     {
         List<String> columnList = new ArrayList();
@@ -115,7 +119,9 @@ public class DBUtil
         }
         return columnList;
     }
-
+    /**
+     * 查询某表所有字段
+     **/
     public List<String> findAllColumns(String table, Connection conn, String tableSpace)
     {
         List<String> columnList = new ArrayList();
@@ -149,5 +155,26 @@ public class DBUtil
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 查询某表所有字段
+     **/
+    public List<String> findTableFields(Connection con, String table) {
+        PreparedStatement ptst = null;
+        ResultSet rs;
+        List<String> field = new ArrayList(); //字段
+        String sql = "desc " + table;
+        try {
+            ptst = con.prepareStatement(sql);
+            rs = ptst.executeQuery();
+            while (rs.next()) {
+                field.add(rs.getString("field"));
+            }
+            closeConn(null, ptst, rs);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return field;
     }
 }
