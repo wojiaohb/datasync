@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+       <!-- 来源库信息 -->
+       <sourceIp value="192.168.0.14"/>
+       <sourcePort value="1521"/>
+       <sourceDBName value="XE"/>
+       <sourceUserName value="system"/>
+       <sourceUserPwd value="oracle"/>
+
+       <!-- 目标库信息 -->
+       <aimIp value="192.168.0.14"/>
+       <aimPort value="1521"/>
+       <aimDBName value="XE"/>
+       <aimUserName value="system"/>
+       <aimUserPwd value="oracle"/>
+
+       <!-- 要同步的表信息 -->
+       <tables>
+              <!--
+              table_name:表明
+              table_date_col：时间戳字段
+              max_date：最大时间（yyyy-MM-dd hh:mm:ss）,时间值为空，同步所有数据，否则同步比指点时间大的数据
+              -->
+              <table max_date="2018-10-26 14:06:00" table_date_col="x" table_name="a"/>
+       </tables>
+</configuration>
