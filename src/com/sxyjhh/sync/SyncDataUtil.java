@@ -1,22 +1,26 @@
 package com.sxyjhh.sync;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.sql.Connection;
+import java.io.*;
+import java.sql.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * description：数据同步工具类
@@ -51,66 +55,56 @@ public class SyncDataUtil {
      */
     protected boolean syncRunController(){
         boolean result = true;
-        //创建一个DocumentBuilderFactory的对象
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        //创建一个DocumentBuilder的对象
-        //创建DocumentBuilder对象
-        DocumentBuilder db = null;
-        try {
-            db = dbf.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            db = null;
-            e.printStackTrace();
-        }
-        //通过DocumentBuilder对象的parser方法加载books.xml文件到当前项目下
+        // 创建saxReader对象
+        SAXReader reader = new SAXReader();
+        // 通过read方法读取一个文件 转换成Document对象
         Document document = null;
-        if(null != db){
-            try {
-                document = db.parse("data_config.xml");
-            } catch (SAXException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            document = reader.read(new File("data_config.xml"));
+        } catch (DocumentException e) {
+            e.printStackTrace();
         }
 
         if(null != document){
             //数据库操作工具
             DBUtil dbUtil = DBUtil.getInstance();
             //读取来源库信息
-            String sourceIp = document.getElementsByTagName("sourceIp").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String sourcePort = document.getElementsByTagName("sourcePort").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String sourceDBName = document.getElementsByTagName("sourceDBName").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String sourceUserName = document.getElementsByTagName("sourceUserName").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String sourceUserPwd = document.getElementsByTagName("sourceUserPwd").item(0).getAttributes().getNamedItem("value").getTextContent();
+            String sourceIp = document.getRootElement().element("sourceIp").getStringValue();
+            String sourcePort = document.getRootElement().element("sourcePort").getStringValue();
+            String sourceDBName = document.getRootElement().element("sourceDBName").getStringValue();
+            String sourceUserName = document.getRootElement().element("sourceUserName").getStringValue();
+            String sourceUserPwd = document.getRootElement().element("sourceUserPwd").getStringValue();
             //获取来源库链接
             Connection sourceConn = dbUtil.getOracleConnection(sourceIp,sourcePort,sourceDBName,sourceUserName,sourceUserPwd);
 
             //读取目标库信息
-            String aimIp = document.getElementsByTagName("aimIp").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String aimPort = document.getElementsByTagName("aimPort").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String aimDBName = document.getElementsByTagName("aimDBName").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String aimUserName = document.getElementsByTagName("aimUserName").item(0).getAttributes().getNamedItem("value").getTextContent();
-            String aimUserPwd = document.getElementsByTagName("aimUserPwd").item(0).getAttributes().getNamedItem("value").getTextContent();
+            String aimIp = document.getRootElement().element("aimIp").getStringValue();
+            String aimPort = document.getRootElement().element("aimPort").getStringValue();
+            String aimDBName = document.getRootElement().element("aimDBName").getStringValue();
+            String aimUserName = document.getRootElement().element("aimUserName").getStringValue();
+            String aimUserPwd = document.getRootElement().element("aimUserPwd").getStringValue();
+
             //获取目标库链接
             Connection aimConn = dbUtil.getOracleConnection(aimIp,aimPort,aimDBName,aimUserName,aimUserPwd);
 
             //读取所有要同步的表
-            NodeList tableList = document.getElementsByTagName("table");
+            List<Element> tableList = document.getRootElement().element("tables").elements("table");
             //循环执行表数据同步
-            for (int i = 0; i < tableList.getLength(); i++) {
-                Node tableNode = tableList.item(i);
+            for (Element tableElement : tableList) {
                 //获取表名称
-                String tableName = tableNode.getAttributes().getNamedItem("table_name").getTextContent();
+                String tableName = tableElement.attributeValue("table_name");
                 //获取时间戳字段名称
-                String tableDateCol = tableNode.getAttributes().getNamedItem("table_date_col").getTextContent();
+                String tableDateCol = tableElement.attributeValue("table_date_col");
                 //获取最大时间
-                String maxDate = tableNode.getAttributes().getNamedItem("max_date").getTextContent();
+                String maxDate = tableElement.attributeValue("max_date");
 
                 //执行表数据同步
                 maxDate = syncOneTable(tableName,tableDateCol,maxDate,sourceConn,aimConn);
-                tableNode.getAttributes().getNamedItem("max_date").setTextContent(maxDate);
-                writeXML(document,"data_config.xml");
+                if(!"".equals(maxDate)){
+                    tableElement.setAttributeValue("max_date",maxDate);
+                    writer(document);
+                }
+
             }
 
             //释放数据库连接
@@ -125,18 +119,48 @@ public class SyncDataUtil {
 
     /**
      * 将修改的xml内容写入文件中
-     * @param doc
-     * @param file
      */
-    private static void writeXML(Document doc, String file) {
+    private void writer(Document document){
+        // 紧凑的格式
+        // OutputFormat format = OutputFormat.createCompactFormat();
+        // 排版缩进的格式
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        // 设置编码
+        format.setEncoding("UTF-8");
+        // 创建XMLWriter对象,指定了写出文件及编码格式
+        // XMLWriter writer = new XMLWriter(new FileWriter(new
+        // File("src//a.xml")),format);
+        File file = new File("data_config.xml");
+        OutputStream opStream = null;
         try {
-            Transformer t = TransformerFactory.newInstance().newTransformer();
-            t.setOutputProperty("indent", "yes");
-            t.transform(new DOMSource(doc), new StreamResult(new FileOutputStream(file)));
-        } catch (TransformerException e) {
-            e.printStackTrace();
+            opStream = new FileOutputStream(file);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        }
+
+        OutputStreamWriter opsWriter = null;
+        if(null != opStream){
+            try {
+                opsWriter = new OutputStreamWriter(opStream,"UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+        if(null != opsWriter){
+            XMLWriter writer = new XMLWriter(opsWriter, format);
+            try {
+                // 立即写入
+                writer.write(document);
+                writer.flush();
+                // 关闭操作
+                writer.close();
+                opsWriter.close();
+                opStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
         }
     }
 
@@ -151,6 +175,159 @@ public class SyncDataUtil {
      * @return
      */
     private String syncOneTable(String tableName, String tableDateCol, String maxDate, Connection sourceConn, Connection aimConn) {
-        return "2018-10-26 14:06:00";
+        DBUtil dbUtil = DBUtil.getInstance();
+        Date date=null;
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        //1.查询要同步的数据量
+        int conut = 0;
+        StringBuilder contSql = new StringBuilder("select count(ID) from ");
+        contSql.append(tableName);
+        if(null != maxDate && !"".equals(maxDate)){
+            contSql.append(" where ");
+            contSql.append(tableDateCol);
+            contSql.append(">?");
+        }
+        try {
+            PreparedStatement countState = sourceConn.prepareStatement(contSql.toString());
+            if(null != maxDate && !"".equals(maxDate)){
+                try {
+                    long dateLong = format.parse(maxDate).getTime();
+                    countState.setDate(1,new Date(dateLong));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+            ResultSet countResultSet = countState.executeQuery();
+            if(countResultSet.next()){
+                conut = countResultSet.getInt(1);
+            }
+            dbUtil.closeConn(null,countState,countResultSet);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        //2.如果有数据需要同步
+        if(conut > 0){
+            System.out.println(conut);
+            //2.1查询要同步的数据的最大时间戳
+            StringBuffer datesql=new StringBuffer("SELECT MAX( ");
+            datesql.append(tableDateCol);
+            datesql.append(") from ");
+            datesql.append(tableName);
+            try {
+				PreparedStatement pstm=sourceConn.prepareStatement(datesql.toString());
+				ResultSet executeQuery = pstm.executeQuery();
+				if(executeQuery.next()){
+					date = executeQuery.getDate(1);
+				}
+				dbUtil.closeConn(null,pstm,executeQuery);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+            //3.生成数据插入语句
+            //3.1查询当前表的列名
+            List<String> colList =  dbUtil.findAllColumns(tableName, sourceConn);
+            //3.2生成数据插入语句
+            StringBuilder insertSql = new StringBuilder("INSERT INTO ");
+            insertSql.append(" SYNC_TABLE_1_TEST (");
+
+            StringBuilder paramSql = new StringBuilder(" values (");
+
+            datesql.append(tableName);
+            datesql.append("_TEST(");
+
+            for(int i = 0 ; i < colList.size() ; i++){
+                if(i<(colList.size()-1)){
+                    insertSql.append(colList.get(i));
+                    insertSql.append(",");
+                    paramSql.append("?");
+                    paramSql.append(",");
+                }else{
+                    insertSql.append(colList.get(i));
+                    insertSql.append(")");
+                    paramSql.append("?");
+                    paramSql.append(")");
+                }
+            }
+
+            String sqlForInsert = insertSql.toString() + paramSql.toString();
+            System.out.println(sqlForInsert);
+
+            //4.分页查询要同步的数据，执行数据插入操作
+            // SELECT * FROM top_test order by id fetch first 10 rows only;
+            //select * from(select a.*,rownum  from (select * from t_articles) a
+            //where rownum between (pageSize*pageNum-(pageSize-1)) and pageSize*pageNum)
+            // SELECT * FROM top_test where updatetime order by updatetime fetch first 5 rows only;
+            StringBuffer rn = new StringBuffer("select * from ");
+            rn.append(tableName);
+            rn.append(" where ");
+            rn.append(tableDateCol);
+            rn.append("<=?");//date
+            if(null != maxDate && !"".equals(maxDate)){
+                rn.append(" and ");
+                rn.append(tableDateCol);
+                rn.append(">?");
+            }
+            rn.append(" order by " );
+            rn.append(tableDateCol );
+            rn.append(" offset ? rows fetch next 200 rows only ");
+            System.out.println(rn.toString());
+            int page = 0;
+            PreparedStatement pstm = null;
+			try {
+				pstm = sourceConn.prepareStatement(rn.toString());
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            
+            int insertNum =0;
+            while (page*200 <= conut){
+                page += 1;
+            	try{
+	            	//从数据源查询数据
+	            	int offset = (page-1) * 200;
+
+	            	if(null != maxDate && !"".equals(maxDate)){
+                        pstm.setDate(1, date);
+                        try {
+                            long dateLong = format.parse(maxDate).getTime();
+                            pstm.setDate(2,new Date(dateLong));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        pstm.setInt(3, offset);
+                    }else{
+                        pstm.setDate(1, date);
+                        pstm.setInt(2, offset);
+                    }
+
+					ResultSet executeQuery = pstm.executeQuery();
+					//将每页数据的map放入list
+					List<Map<String,Object>> list = new ArrayList<>();
+                    //存入目标数据库
+                    PreparedStatement insertpstm=sourceConn.prepareStatement(sqlForInsert);
+					while(executeQuery.next()){
+						//将返回数据
+						for(int j=0;j<colList.size();j++){
+                            insertpstm.setObject(j+1, executeQuery.getObject(colList.get(j)));
+						}
+                        boolean b = insertpstm.execute();
+                        insertNum += b?1:0;
+					}
+					dbUtil.closeConn(null,pstm,executeQuery);
+					dbUtil.closeConn(null,insertpstm,null);
+					System.out.println("插入总计："+conut+"条！");
+            	}catch(Exception e){
+            		e.printStackTrace();
+            	}
+            }
+        }
+        //5.返回最大时间
+        if(null == date){
+            return "";
+        }else{
+            return format.format(date);
+        }
     }
 }
