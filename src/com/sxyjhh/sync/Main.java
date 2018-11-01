@@ -7,14 +7,13 @@ public class Main {
             SyncDataUtil syncDataUtil = SyncDataUtil.getInstance();
             syncDataUtil.syncRunController();//执行同步
 
-            //休眠一分钟
+            //休眠时间
             try {
-                Thread.sleep(20000);
+                Thread.sleep(3000000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-    	
 
     }
 }

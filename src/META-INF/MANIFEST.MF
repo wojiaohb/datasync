@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: ojdbc7-12.1.0.1.jar dom4j-2.1.1.jar
+Main-Class: com.sxyjhh.sync.Main
+

@@ -7,20 +7,12 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * description：数据同步工具类
@@ -180,7 +172,7 @@ public class SyncDataUtil {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         //1.查询要同步的数据量
         int conut = 0;
-        StringBuilder contSql = new StringBuilder("select count(ID) from ");
+        StringBuilder contSql = new StringBuilder("select count(*) from ");
         contSql.append(tableName);
         if(null != maxDate && !"".equals(maxDate)){
             contSql.append(" where ");
@@ -227,39 +219,52 @@ public class SyncDataUtil {
             //3.生成数据插入语句
             //3.1查询当前表的列名
             List<String> colList =  dbUtil.findAllColumns(tableName, sourceConn);
-            //3.2生成数据插入语句
+            //3.2生成数据插入语句 （增加的方式）
             StringBuilder insertSql = new StringBuilder("INSERT INTO ");
-            insertSql.append(" SYNC_TABLE_1_TEST (");
-
+            insertSql.append("sync_table_1_test");
+            insertSql.append(" ( ");
             StringBuilder paramSql = new StringBuilder(" values (");
-
-            datesql.append(tableName);
-            datesql.append("_TEST(");
 
             for(int i = 0 ; i < colList.size() ; i++){
                 if(i<(colList.size()-1)){
-                    insertSql.append(colList.get(i));
-                    insertSql.append(",");
-                    paramSql.append("?");
-                    paramSql.append(",");
+                    if(colList.get(i).toUpperCase().equals("ACCEPTLIST")){
+                        insertSql.append(colList.get(i));
+                        insertSql.append(",");
+                        paramSql.append("empty_clob()");
+                        paramSql.append(",");
+                    }else{
+                        insertSql.append(colList.get(i));
+                        insertSql.append(",");
+                        paramSql.append("?");
+                        paramSql.append(",");
+                    }
                 }else{
-                    insertSql.append(colList.get(i));
-                    insertSql.append(")");
-                    paramSql.append("?");
-                    paramSql.append(")");
+                    if(colList.get(i).toUpperCase().equals("ACCEPTLIST")){
+                        insertSql.append(colList.get(i));
+                        insertSql.append(")");
+                        paramSql.append("empty_clob()");
+                        paramSql.append(")");
+                    }else{
+                        insertSql.append(colList.get(i));
+                        insertSql.append(")");
+                        paramSql.append("?");
+                        paramSql.append(")");
+                    }
                 }
             }
-
+            //增加数据到表中
             String sqlForInsert = insertSql.toString() + paramSql.toString();
             System.out.println(sqlForInsert);
-
             //4.分页查询要同步的数据，执行数据插入操作
+            //Oracle  12c的分页查询方式
             // SELECT * FROM top_test order by id fetch first 10 rows only;
-            //select * from(select a.*,rownum  from (select * from t_articles) a
+            //select * from(select a.*,rownum rn from (select * from tableName) a
             //where rownum between (pageSize*pageNum-(pageSize-1)) and pageSize*pageNum)
             // SELECT * FROM top_test where updatetime order by updatetime fetch first 5 rows only;
             StringBuffer rn = new StringBuffer("select * from ");
+            rn.append(" ( select a.* from  (select * from " );
             rn.append(tableName);
+            rn.append(" ) a ");
             rn.append(" where ");
             rn.append(tableDateCol);
             rn.append("<=?");//date
@@ -268,9 +273,8 @@ public class SyncDataUtil {
                 rn.append(tableDateCol);
                 rn.append(">?");
             }
-            rn.append(" order by " );
-            rn.append(tableDateCol );
-            rn.append(" offset ? rows fetch next 200 rows only ");
+            rn.append(" and ");
+            rn.append(" rownum  between ? and ? ) ");
             System.out.println(rn.toString());
             int page = 0;
             PreparedStatement pstm = null;
@@ -285,10 +289,10 @@ public class SyncDataUtil {
             while (page*200 <= conut){
                 page += 1;
             	try{
-	            	//从数据源查询数据
-	            	int offset = (page-1) * 200;
-
-	            	if(null != maxDate && !"".equals(maxDate)){
+	            	//从数据源查询数据,每页按200条数据查询
+	            	int offset = page * 200-( 200-1 );
+	            	int endoff = page*200 ;
+                    if(null != maxDate && !"".equals(maxDate)){
                         pstm.setDate(1, date);
                         try {
                             long dateLong = format.parse(maxDate).getTime();
@@ -297,22 +301,31 @@ public class SyncDataUtil {
                             e.printStackTrace();
                         }
                         pstm.setInt(3, offset);
+                        pstm.setInt(4, endoff);
                     }else{
                         pstm.setDate(1, date);
                         pstm.setInt(2, offset);
+                        pstm.setInt(3, endoff);
                     }
 
+
 					ResultSet executeQuery = pstm.executeQuery();
-					//将每页数据的map放入list
-					List<Map<String,Object>> list = new ArrayList<>();
                     //存入目标数据库
-                    PreparedStatement insertpstm=sourceConn.prepareStatement(sqlForInsert);
+                    PreparedStatement insertpstm=aimConn.prepareStatement(sqlForInsert);
+
 					while(executeQuery.next()){
 						//将返回数据
+                        int x=1;
 						for(int j=0;j<colList.size();j++){
-                            insertpstm.setObject(j+1, executeQuery.getObject(colList.get(j)));
+						    if(!colList.get(j).toUpperCase().equals("ACCEPTLIST")){
+                                insertpstm.setObject(j+x, executeQuery.getObject(colList.get(j)));
+                            }else{
+						        x=0;
+                            }
 						}
+						//增加到新表中的数据
                         boolean b = insertpstm.execute();
+
                         insertNum += b?1:0;
 					}
 					dbUtil.closeConn(null,pstm,executeQuery);
