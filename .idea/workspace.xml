@@ -7,13 +7,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="65542848-2071-4255-b4f0-565f9ec724d4" name="Default Changelist" comment="Default Changelist">
-      <change afterPath="$PROJECT_DIR$/lib/fastjson-1.2.5.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/datasync.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/datasync.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_config.xml" beforeDir="false" afterPath="$PROJECT_DIR$/data_config.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/sxyjhh/sync/DBUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/sxyjhh/sync/DBUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/sxyjhh/sync/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/sxyjhh/sync/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/sxyjhh/sync/SyncDataUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/sxyjhh/sync/SyncDataUtil.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -99,8 +93,8 @@
       <file leaf-file-name="SyncDataUtil.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/com/sxyjhh/sync/SyncDataUtil.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="475">
-              <caret line="308" column="11" lean-forward="true" selection-start-line="308" selection-start-column="11" selection-end-line="308" selection-end-column="11" />
+            <state relative-caret-position="625">
+              <caret line="314" column="41" lean-forward="true" selection-start-line="314" selection-start-column="41" selection-end-line="314" selection-end-column="41" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -443,7 +437,7 @@
       <workItem from="1540958474127" duration="873000" />
       <workItem from="1540961522766" duration="14498000" />
       <workItem from="1540982472791" duration="1691000" />
-      <workItem from="1541035073782" duration="22951000" />
+      <workItem from="1541035073782" duration="23261000" />
     </task>
     <task id="LOCAL-00001" summary="Default Changelist">
       <created>1541037134486</created>
@@ -452,11 +446,18 @@
       <option name="project" value="LOCAL" />
       <updated>1541037134486</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Default Changelist">
+      <created>1541063734243</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1541063734243</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="144665000" />
+    <option name="totallyTimeSpent" value="144975000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -480,7 +481,7 @@
       <window_info anchor="right" id="Maven Projects" order="8" weight="0.32995737" />
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32997763" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49946696" visible="true" weight="0.31879196" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49946696" weight="0.31879196" />
       <window_info anchor="bottom" id="Terminal" order="10" weight="0.32997763" />
       <window_info id="Capture Tool" order="5" />
       <window_info id="Designer" order="3" />
@@ -957,8 +958,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/sxyjhh/sync/SyncDataUtil.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="475">
-          <caret line="308" column="11" lean-forward="true" selection-start-line="308" selection-start-column="11" selection-end-line="308" selection-end-column="11" />
+        <state relative-caret-position="625">
+          <caret line="314" column="41" lean-forward="true" selection-start-line="314" selection-start-column="41" selection-end-line="314" selection-end-column="41" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
