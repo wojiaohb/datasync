@@ -21,7 +21,7 @@
           max_date：最大时间（yyyy-MM-dd hh:mm:ss）,时间值为空，同步所有数据，否则同步比指点时间大的数据
           &ndash;&gt;-->  
     <!--在这改表就可以了-->  
-    <table max_date="" table_date_col="UPDATE_TIME" table_name="SYNC_TABLE_1"/>
+    <table max_date="2018-11-02 19:58:14" table_date_col="UPDATE_TIME" table_name="SYNC_TABLE_1"/>  
     <!--<table max_date="" table_date_col="UPDATE_TIME" table_name="SYNC_TABLE_2"/>
     <table max_date="" table_date_col="UPDATE_TIME" table_name="SYNC_TABLE_3"/>
     <table max_date="" table_date_col="UPDATE_TIME" table_name="SYNC_TABLE_4"/>

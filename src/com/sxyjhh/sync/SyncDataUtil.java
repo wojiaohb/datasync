@@ -1,5 +1,6 @@
 package com.sxyjhh.sync;
 
+import com.alibaba.fastjson.JSONObject;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -218,7 +219,7 @@ public class SyncDataUtil {
 			}
             //3.生成数据插入语句
             //3.1查询当前表的列名
-            List<String> colList =  dbUtil.findAllColumns(tableName, sourceConn);
+            List<JSONObject> colList =  dbUtil.findAllColumns(tableName, sourceConn);
             //3.2生成数据插入语句 （增加的方式）
             StringBuilder insertSql = new StringBuilder("INSERT INTO ");
             insertSql.append("sync_table_1_test");
@@ -227,29 +228,15 @@ public class SyncDataUtil {
 
             for(int i = 0 ; i < colList.size() ; i++){
                 if(i<(colList.size()-1)){
-                    if(colList.get(i).toUpperCase().equals("ACCEPTLIST")){
-                        insertSql.append(colList.get(i));
-                        insertSql.append(",");
-                        paramSql.append("empty_clob()");
-                        paramSql.append(",");
-                    }else{
-                        insertSql.append(colList.get(i));
+                        insertSql.append(colList.get(i).get("code"));
                         insertSql.append(",");
                         paramSql.append("?");
                         paramSql.append(",");
-                    }
                 }else{
-                    if(colList.get(i).toUpperCase().equals("ACCEPTLIST")){
-                        insertSql.append(colList.get(i));
-                        insertSql.append(")");
-                        paramSql.append("empty_clob()");
-                        paramSql.append(")");
-                    }else{
-                        insertSql.append(colList.get(i));
+                        insertSql.append(colList.get(i).get("code"));
                         insertSql.append(")");
                         paramSql.append("?");
                         paramSql.append(")");
-                    }
                 }
             }
             //增加数据到表中
@@ -308,20 +295,49 @@ public class SyncDataUtil {
                         pstm.setInt(3, endoff);
                     }
 
-
 					ResultSet executeQuery = pstm.executeQuery();
                     //存入目标数据库
                     PreparedStatement insertpstm=aimConn.prepareStatement(sqlForInsert);
-
 					while(executeQuery.next()){
 						//将返回数据
                         int x=1;
 						for(int j=0;j<colList.size();j++){
-						    if(!colList.get(j).toUpperCase().equals("ACCEPTLIST")){
-                                insertpstm.setObject(j+x, executeQuery.getObject(colList.get(j)));
-                            }else{
-						        x=0;
-                            }
+						        if(colList.get(j).get("type").toString().equalsIgnoreCase("BLOB")){
+                                    byte[] content = null;
+                                    java.sql.Blob blob = executeQuery.getBlob(colList.get(j).get("code").toString());
+                                    if (blob != null){
+                                        InputStream inStream = blob.getBinaryStream();
+                                        ByteArrayOutputStream bot = new ByteArrayOutputStream();
+                                        byte[] b = new byte[(int)blob.length()];
+                                        int len = 0;
+                                        while ((len = inStream.read(b)) != -1) {
+                                            bot.write(b, 0, len);
+                                        }
+
+                                        content = bot.toByteArray();
+
+                                        System.out.println("content:"+content);
+                                    }
+                                    insertpstm.setObject(j+x, content);
+                                }else if(colList.get(j).get("type").toString().equalsIgnoreCase("clob")){
+						            Clob clob = executeQuery.getClob(colList.get(j).get("code").toString());
+                                    String detailinfo = "";
+                                    if(clob != null){
+                                        detailinfo = clob.getSubString((long)1,(int)clob.length());
+                                    }
+                                    insertpstm.setObject(j+x, detailinfo);
+                                }else if(colList.get(j).get("type").toString().equalsIgnoreCase("nclob")){
+                                    NClob nclob = executeQuery.getNClob(colList.get(j).get("code").toString());
+                                    System.out.println(nclob+"<_________________");
+                                    String detailinfo = "";
+                                    if(nclob !=null){
+                                        detailinfo=nclob.getSubString((long)1,(int)nclob.length());
+                                    }
+                                    insertpstm.setObject(j+x,detailinfo);
+                                }else{
+						            insertpstm.setObject(j+x, executeQuery.getObject(colList.get(j).get("code").toString()));
+                                }
+
 						}
 						//增加到新表中的数据
                         boolean b = insertpstm.execute();

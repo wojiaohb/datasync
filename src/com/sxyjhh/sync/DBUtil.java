@@ -1,5 +1,7 @@
 package com.sxyjhh.sync;
 
+import com.alibaba.fastjson.JSONObject;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +100,7 @@ public class DBUtil
     /**
      * 查询某表所有字段
      **/
-    public List<String> findAllColumns(String table, Connection conn)
+ /*   public List<String> findAllColumns(String table,Connection conn)
     {
         List<String> columnList = new ArrayList();
         DatabaseMetaData meta = null;
@@ -118,7 +120,7 @@ public class DBUtil
             return columnList;
         }
         return columnList;
-    }
+    }*/
     /**
      * 查询某表所有字段
      **/
@@ -176,5 +178,34 @@ public class DBUtil
             e.printStackTrace();
         }
         return field;
+    }
+
+    public List<JSONObject> findAllColumns(String table, Connection conn)
+    {
+        List<JSONObject> columnObjList = new ArrayList();
+        DatabaseMetaData meta = null;
+        ResultSet rs = null;
+        try
+        {
+            meta = conn.getMetaData();
+            rs = meta.getColumns(null, null, table, "%");
+            while (rs.next())
+            {
+                JSONObject colJsonObj = new JSONObject();
+                colJsonObj.put("code", rs.getString("COLUMN_NAME"));
+                colJsonObj.put("name", rs.getString("REMARKS"));
+                colJsonObj.put("type", rs.getString("TYPE_NAME"));
+                colJsonObj.put("length", rs.getString("COLUMN_SIZE"));
+                colJsonObj.put("decimalDigits", rs.getString("DECIMAL_DIGITS"));
+                colJsonObj.put("nullable", rs.getString("NULLABLE"));
+                columnObjList.add(colJsonObj);
+            }
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+            return columnObjList;
+        }
+        return columnObjList;
     }
 }

@@ -19,5 +19,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="datasync - 11g" level="project" />
+    <orderEntry type="library" name="fastjson-1.2.5" level="project" />
   </component>
 </module>
