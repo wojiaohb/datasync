@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/datasync.iml" filepath="$PROJECT_DIR$/.idea/datasync.iml" />
-      <module fileurl="file://$PROJECT_DIR$/datasync.iml" filepath="$PROJECT_DIR$/datasync.iml" />
     </modules>
   </component>
 </project>

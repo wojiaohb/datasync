@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * description：数据同步工具类
- * author：Shaok Lei
+ * author：hb
  * Date：2018-10-25
  */
 public class SyncDataUtil {
@@ -315,7 +315,6 @@ public class SyncDataUtil {
                                         }
 
                                         content = bot.toByteArray();
-
                                         System.out.println("content:"+content);
                                     }
                                     insertpstm.setObject(j+x, content);
@@ -328,7 +327,6 @@ public class SyncDataUtil {
                                     insertpstm.setObject(j+x, detailinfo);
                                 }else if(colList.get(j).get("type").toString().equalsIgnoreCase("nclob")){
                                     NClob nclob = executeQuery.getNClob(colList.get(j).get("code").toString());
-                                    System.out.println(nclob+"<_________________");
                                     String detailinfo = "";
                                     if(nclob !=null){
                                         detailinfo=nclob.getSubString((long)1,(int)nclob.length());
